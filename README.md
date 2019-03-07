@@ -798,6 +798,10 @@ export function getUserRepository(): Repository<User> {
 
 ## Declaring controllers
 
+It is recommended to read the following documentation:
+
+- [Routing in Express.js](https://expressjs.com/en/guide/routing.html)
+
 ```ts
 import * as express from "express";
 import * as joi from "joi";
@@ -875,9 +879,76 @@ export function getUserController() {
 }
 ```
 
+```ts
+import express from "express";
+import bodyParser from "body-parser";
+import { createDbConnection } from "./db";
+import { getUserController } from "../controllers/user_controllet"; // <--- HERE!
+
+export async function createApp() {
+
+    // Create db connection
+    await createDbConnection();
+
+    // Creates app
+    const app = express();
+
+    // Server config to be able to send JSON
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+
+    // Declare main path
+    app.get("/", (req, res) => {
+        res.send("This is the home page!");
+    });
+
+    // Declare controller instances
+    const userController = getUserController(); // <--- HERE!
+
+    // Declare routes
+    app.use("/api/v1/users", userController); // <--- HERE!
+
+    return app;
+}
+
+```
+
+```ts
+// Create user
+(async () => {
+    const data = {
+        email: "test@test.com",
+        password: "mysecret"
+    };
+    const response = await fetch(
+        "/api/v1/auth/login",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        }
+    );
+    const json = await response.json();
+    console.log(json);
+})();
+```
+
 ### Implementing auth with JWT
 
+The JSON web token (JWT) authentication workflow looks as follows:
+
 ![](./media/jwt.png)
+
+It is recommened to read the following documents to understand the code snippets below:
+
+- [Introduction to JSON Web Tokens](https://jwt.io/introduction/)
+- [The node-jsonwebtoken docs](https://github.com/auth0/node-jsonwebtoken)
+- [Writing middleware for use in Express apps](https://expressjs.com/en/guide/writing-middleware.html)
+- [Using middleware](https://expressjs.com/en/guide/using-middleware.html)
+
+We need to implement a controller to create a JWT when the user credentials are valid:
 
 ```ts
 import * as express from "express";
@@ -954,6 +1025,8 @@ export function getAuthController() {
 
 ```
 
+We then need to create an Express.js middleware to validate the JWT before a private endpoint is executed:
+
 ```ts
 import * as express from "express";
 import jwt from "jsonwebtoken";
@@ -1000,3 +1073,45 @@ export function authMiddleware(
     }
 }
 ```
+
+Finally, we can protect an enpoint by applying the Express.js middleware:
+
+```ts
+export function getCommentsController() {
+
+    const repository = getCommentRepository();
+    const handlers = getHandlers(repository);
+    const router = express.Router()
+
+    // Private
+    router.patch("/comments/:id", authMiddleware, handlers.updateComment);
+    router.post("/comments", authMiddleware, handlers.createComment);
+    router.delete("/comments/:id", authMiddleware, handlers.deleteCommentById);
+
+    return router;
+}
+```
+
+```ts
+// Create link
+(async () => {
+    const data = {
+        email: "test@test.com",
+        password: "mysecret"
+    };
+    const response = await fetch(
+        "/api/v1/links",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": "INSERT_JSON_WEB_TOKEN_HERE"
+            },
+            body: JSON.stringify(data)
+        }
+    );
+    const json = await response.json();
+    console.log(json);
+})();
+```
+
