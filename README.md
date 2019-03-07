@@ -116,7 +116,7 @@ Just like before if everything went right, we should see the version of `ts-node
 
 ## Bash basics
 
-Before you can continue, you must know the basics about navigating through directories using the CLI. The following table showcases some of the commands and symbols that you are going to need at some point or another in the upcoming chapters:
+Before you can continue, you must know the basics about navigating through directories using the CLI. The following table showcases some of the commands and symbols that you are going to need at some point or another:
 
 | Symbols                      | Description                                                |
 | ---------------------------- | ---------------------------------------------------------- |
@@ -243,7 +243,7 @@ We are also going to open the `tsconfig.json` and uncomment the `lib` setting an
 
 The preceding should allow us to work with some of the JavaScript APIS of the ES6 specification such as the Promise API.
 
-We now know how to create a generic TypeScript Node.js project, but we need to be a little more specific. We are going to focus on building Node.js using a framework known as Express.js. We will learn more about Express.js in the upcoming chapters, but we will learn how to install it now.
+We now know how to create a generic TypeScript Node.js project, but we need to be a little more specific. We are going to focus on building Node.js using a framework known as Express.js.
 
 To be able to use Express.js, we need to install the `express` module and its type definitions `@types/express`.
 
