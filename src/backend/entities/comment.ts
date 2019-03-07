@@ -1,20 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from "typeorm";
-import * as joi from "joi";
 import { Link } from "./link";
 import { User } from "./user";
-
-export const commentIdSchema = {
-    id: joi.number()
-};
-
-export const commentUpdateSchema = {
-    content: joi.string()
-}
-
-export const newCommentSchema = {
-    linkId: joi.number(),
-    content: joi.string()
-};
 
 @Entity()
 export class Comment {

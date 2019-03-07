@@ -3,8 +3,9 @@ import * as joi from "joi";
 import jwt from "jsonwebtoken";
 import { Repository } from "typeorm";
 import { getUserRepository } from "../repositories/user_repository";
-import { User, userDetailsSchema } from "../entities/user";
+import { User } from "../entities/user";
 import { AuthTokenContent } from "../config/auth";
+import { userDetailsSchema } from "./user_controllet";
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
@@ -17,15 +18,24 @@ export function getHandlers(AUTH_SECRET: string, userRepository: Repository<User
                 // Read and validate the user details from the request body
                 const userDetails = req.body;
                 const result = joi.validate(userDetails, userDetailsSchema);
+
                 if (result.error) {
                     res.status(400).send();
                 } else {
+
                     // Try to find the user with the given credentials
-                    const match = await userRepository.findOne(userDetails);
+                    const match = await userRepository.findOne({
+                        where: {
+                            email: userDetails.email,
+                            password: userDetails.password
+                        }
+                    });
+
                     // Return error HTTP 404 not found if not found
                     if (match === undefined) {
                         res.status(401).send();
                     } else {
+
                         // Create JWT token
                         if (AUTH_SECRET === undefined) {
                             throw new Error("Missing environment variable DATABASE_HOST");
@@ -36,8 +46,9 @@ export function getHandlers(AUTH_SECRET: string, userRepository: Repository<User
                         }
                     }
                 }
-            // Handle unexpected errors
+
             } catch(err) {
+                // Handle unexpected errors
                 console.error(err);
                 res.status(500)
                    .json({ error: "Internal server error"})
@@ -64,7 +75,7 @@ export function getAuthController() {
     const handlers = getHandlers(AUTH_SECRET, repository);
     const router = express.Router();
 
-    // HTTP POST http://localhost:8080/auth/login/
+    // Public
     router.post("/login", handlers.login);
 
     return router;

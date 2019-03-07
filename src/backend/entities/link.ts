@@ -2,16 +2,6 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne } from "ty
 import { Comment } from "./comment";
 import { Vote } from "./vote";
 import { User } from "./user";
-import * as joi from "joi";
-
-export const linkIdSchema = {
-    id: joi.number()
-};
-
-export const linkSchema = {
-    title: joi.string(),
-    url: joi.string()
-};
 
 @Entity()
 export class Link {

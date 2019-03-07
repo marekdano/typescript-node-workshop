@@ -1,17 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "typeorm";
-import * as joi from "joi";
 import { Vote } from "./vote";
 import { Link } from "./link";
 import { Comment } from "./comment";
-
-export const UserIdSchema = {
-    id: joi.number()
-};
-
-export const userDetailsSchema = {
-    email: joi.string().email(),
-    password: joi.string()
-};
 
 @Entity()
 export class User {

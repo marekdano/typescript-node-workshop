@@ -1,9 +1,18 @@
 import * as express from "express";
-import * as joi from "joi";
 import { Repository } from "typeorm";
-import { User, userDetailsSchema, UserIdSchema } from "../entities/user";
+import { User } from "../entities/user";
 import { getUserRepository } from "../repositories/user_repository";
 import { authMiddleware } from "../config/auth";
+import * as joi from "joi";
+
+export const UserIdSchema = {
+    id: joi.number()
+};
+
+export const userDetailsSchema = {
+    email: joi.string().email(),
+    password: joi.string()
+};
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
@@ -98,7 +107,7 @@ export function getUserController() {
     router.post("/", handlers.createUser);
 
     // Private
-    router.get("/:id", handlers.getUserById);
+    router.get("/:id", authMiddleware, handlers.getUserById);
 
     return router;
 }

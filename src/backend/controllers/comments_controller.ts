@@ -1,9 +1,22 @@
 import * as express from "express";
-import * as joi from "joi";
 import { Repository } from "typeorm";
-import { Comment, newCommentSchema, commentIdSchema, commentUpdateSchema } from "../entities/comment";
+import { Comment } from "../entities/comment";
 import { getCommentRepository } from "../repositories/comment_repository";
 import { authMiddleware, AuthenticatedRequest } from "../config/auth";
+import * as joi from "joi";
+
+export const commentIdSchema = {
+    id: joi.number()
+};
+
+export const commentUpdateSchema = {
+    content: joi.string()
+}
+
+export const newCommentSchema = {
+    linkId: joi.number(),
+    content: joi.string()
+};
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
@@ -82,7 +95,7 @@ export function getHandlers(commentRepository: Repository<Comment>) {
     }
 
     // Create a new comment
-    const createComment =  (req: express.Request, res: express.Response) => {
+    const createComment = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
 
@@ -120,7 +133,7 @@ export function getHandlers(commentRepository: Repository<Comment>) {
     }
 
     // Delete a comment by its Id
-    const deleteCommentById =  (req: express.Request, res: express.Response) => {
+    const deleteCommentById = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
 

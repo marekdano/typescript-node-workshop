@@ -1,15 +1,24 @@
 import * as express from "express";
-import * as joi from "joi";
 import { Repository } from "typeorm";
 import { getLinkRepository } from "../repositories/link_repository";
-import { Link, linkIdSchema } from "../entities/link";
+import { Link } from "../entities/link";
 import { authMiddleware, AuthenticatedRequest } from "../config/auth";
+import * as joi from "joi";
+
+export const linkIdSchema = {
+    id: joi.number()
+};
+
+export const linkSchema = {
+    title: joi.string(),
+    url: joi.string()
+};
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
 export function getHandlers(linkRepository: Repository<Link>) {
 
-    const getAllLinks =  (req: express.Request, res: express.Response) => {
+    const getAllLinks = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
                 const links = await linkRepository.find();
@@ -24,7 +33,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
         })();
     }
 
-    const getLinkById =  (req: express.Request, res: express.Response) => {
+    const getLinkById = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
 
@@ -62,7 +71,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
         })();
     }
 
-    const createLink =  (req: express.Request, res: express.Response) => {
+    const createLink = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
                 
@@ -74,7 +83,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
 
                 // Read and validate the link from the request body
                 const newLink = req.body;
-                const result = joi.validate(newLink, linkIdSchema);
+                const result = joi.validate(newLink, linkSchema);
 
                 if (result.error) {
                     res.json({ msg: `Invalid user details in body!`}).status(400).send();
@@ -99,7 +108,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
         })();
     }
 
-    const deleteLinkById =  (req: express.Request, res: express.Response) => {
+    const deleteLinkById = (req: express.Request, res: express.Response) => {
         (async () => {
             try {
 
@@ -140,7 +149,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
         })();
     }
 
-    const upvoteLink =  (req: express.Request, res: express.Response) => {
+    const upvoteLink = (req: express.Request, res: express.Response) => {
         (async () => {
 
             try {
@@ -165,7 +174,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
         })();
     }
 
-    const downvoteLink =  (req: express.Request, res: express.Response) => {
+    const downvoteLink = (req: express.Request, res: express.Response) => {
         (async () => {
 
             try {

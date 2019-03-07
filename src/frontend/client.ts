@@ -1,5 +1,10 @@
-// Create user
-(async () => {
+// JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNTUxOTk1OTMyfQ.R7QYYFVk1hu9t6DQFNhZlUNTat6gIFn1AVl901C-mOQ
+
+/****************************************************************
+*  AUTH SERVICES
+****************************************************************/
+
+async function getToken(email: string, password: string) {
     const data = {
         email: "test@test.com",
         password: "mysecret"
@@ -15,14 +20,17 @@
         }
     );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Login
-(async () => {
+/****************************************************************
+*  USER SERVICES
+****************************************************************/
+
+async function createUser(email: string, password: string) {
     const data = {
-        email: "test@test.com",
-        password: "mysecret"
+        email: email,
+        password: password
     };
     const response = await fetch(
         "/api/v1/users",
@@ -35,21 +43,31 @@
         }
     );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Get user by ID
-(async () => {
-    const response = await fetch("/api/v1/users/1");
+async function getUserById(id: number, jwt: string) {
+    const response = await fetch(
+        `/api/v1/users/${id}`,
+        {
+            method: "GET",
+            headers: {
+                "x-auth-token": jwt
+            }
+        }
+    );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Create link
-(async () => {
+/****************************************************************
+*  LINK SERVICES
+****************************************************************/
+
+async function createLink(title: string, url: string, jwt: string) {
     const data = {
-        email: "test@test.com",
-        password: "mysecret"
+        title: title,
+        url: url
     };
     const response = await fetch(
         "/api/v1/links",
@@ -57,42 +75,62 @@
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-auth-token": "INSERT_JSON_WEB_TOKEN_HERE"
+                "x-auth-token": jwt
             },
             body: JSON.stringify(data)
         }
     );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Get all links
-(async () => {
+async function getAllLinks() {
     const response = await fetch("/api/v1/links");
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Get link by ID
-(async () => {
-    const response = await fetch("/api/v1/links/1");
+async function getLinkById(id: number) {
+    const response = await fetch(`/api/v1/links/${id}`);
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
-// Delete link by ID
-(async () => {
+async function deleteLinkById(id: number, jwt: string) {
     const response = await fetch(
-        "/api/v1/links/1",
+        `/api/v1/links/${id}`,
         {
             method: "DELETE",
             headers: {
                 "Content-Type": "application/json",
-                "x-auth-token": "INSERT_JSON_WEB_TOKEN_HERE"
+                "x-auth-token": jwt
             }
         }
     );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 
+async function upvoteLink(id: string, jwt: string) {
+
+}
+
+async function downvoteLink(id: string, jwt: string) {
+    
+}
+
+/****************************************************************
+*  COMMENT SERVICES
+****************************************************************/
+
+async function deleteCommentById(id: string, jwt: string) {
+
+}
+
+async function updateComment(id: string, content: string, jwt: string) {
+
+}
+
+async function createComment(linkId: number, content: string, jwt: string) {
+
+}
