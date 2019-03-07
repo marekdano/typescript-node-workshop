@@ -4,16 +4,16 @@ import { Link } from "./link";
 import { User } from "./user";
 
 export const commentIdSchema = {
-    id: joi.number
+    id: joi.number()
 };
 
 export const commentUpdateSchema = {
-    content: joi.string
+    content: joi.string()
 }
 
 export const newCommentSchema = {
-    linkId: joi.number,
-    content: joi.string
+    linkId: joi.number(),
+    content: joi.string()
 };
 
 @Entity()

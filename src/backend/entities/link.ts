@@ -5,13 +5,12 @@ import { User } from "./user";
 import * as joi from "joi";
 
 export const linkIdSchema = {
-    title: joi.string,
-    url: joi.string
+    id: joi.number()
 };
 
 export const linkSchema = {
-    title: joi.string,
-    url: joi.string
+    title: joi.string(),
+    url: joi.string()
 };
 
 @Entity()

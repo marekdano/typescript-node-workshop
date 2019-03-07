@@ -2,7 +2,7 @@ import * as express from "express";
 import * as joi from "joi";
 import { Repository } from "typeorm";
 import { getLinkRepository } from "../repositories/link_repository";
-import { Link, linkIdSchema, linkSchema } from "../entities/link";
+import { Link, linkIdSchema } from "../entities/link";
 import { authMiddleware, AuthenticatedRequest } from "../config/auth";
 
 // We pass the repository instance as an argument
@@ -27,17 +27,22 @@ export function getHandlers(linkRepository: Repository<Link>) {
     const getLinkById =  (req: express.Request, res: express.Response) => {
         (async () => {
             try {
+
+                // Validate Id in URL
                 const idStr = req.params.id;
-                const id = { id: parseInt(idStr) };
-                const result = joi.validate(id, linkIdSchema);
-                if (result.error) {
+                const linkId = { id: parseInt(idStr) };
+                const idValidationresult = joi.validate(linkId, linkIdSchema);
+
+                console.log("------------------------------->", idValidationresult);
+                
+                if (idValidationresult.error) {
                     res.status(400).json({ error: "Bad request" }).send();
-                } else {
+                } {
                     const link = await linkRepository.createQueryBuilder("link")
                                                      .leftJoinAndSelect("link.comments", "comment")
                                                      .leftJoinAndSelect("link.user", "user")
                                                      .leftJoinAndSelect("link.votes", "vote")
-                                                     .where("link.id = :id", { id: id })
+                                                     .where("link.id = :id", { id: linkId.id })
                                                      .getOne();
                     if (link === undefined) {
                         res.status(404)
@@ -69,7 +74,7 @@ export function getHandlers(linkRepository: Repository<Link>) {
 
                 // Read and validate the link from the request body
                 const newLink = req.body;
-                const result = joi.validate(newLink, linkSchema);
+                const result = joi.validate(newLink, linkIdSchema);
 
                 if (result.error) {
                     res.json({ msg: `Invalid user details in body!`}).status(400).send();

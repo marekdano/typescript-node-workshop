@@ -57,7 +57,7 @@ export function getHandlers(userRepository: Repository<User>) {
                                                      .leftJoinAndSelect("user.comments", "comment")
                                                      .leftJoinAndSelect("user.links", "link")
                                                      .leftJoinAndSelect("user.votes", "vote")
-                                                     .where("user.id = :id", { id: userId })
+                                                     .where("user.id = :id", { id: userId.id })
                                                      .getOne();
 
                     // Return error HTTP 404 not found if not found
@@ -98,7 +98,7 @@ export function getUserController() {
     router.post("/", handlers.createUser);
 
     // Private
-    router.get("/:id", authMiddleware, handlers.getUserById);
+    router.get("/:id", handlers.getUserById);
 
     return router;
 }
