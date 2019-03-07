@@ -2,7 +2,7 @@ import * as express from "express";
 import * as joi from "joi";
 import { Repository } from "typeorm";
 import { getLinkRepository } from "../repositories/link_repository";
-import { Link } from "../entities/link";
+import { Link, linkIdSchema, linkSchema } from "../entities/link";
 import { authMiddleware, AuthenticatedRequest } from "../config/auth";
 
 // We pass the repository instance as an argument
@@ -14,8 +14,8 @@ export function getHandlers(linkRepository: Repository<Link>) {
             try {
                 const links = await linkRepository.find();
                 res.json(links).send();
-            // Handle unexpected errors
             } catch (err) {
+                // Handle unexpected errors
                 console.error(err);
                 res.status(500)
                    .json({ error: "Internal server error"})
@@ -28,9 +28,9 @@ export function getHandlers(linkRepository: Repository<Link>) {
         (async () => {
             try {
                 const idStr = req.params.id;
-                const id = parseInt(idStr);
-                console.log("-------------------------->", isNaN(id));
-                if (isNaN(id)) {
+                const id = { id: parseInt(idStr) };
+                const result = joi.validate(id, linkIdSchema);
+                if (result.error) {
                     res.status(400).json({ error: "Bad request" }).send();
                 } else {
                     const link = await linkRepository.createQueryBuilder("link")
@@ -59,7 +59,38 @@ export function getHandlers(linkRepository: Repository<Link>) {
 
     const createLink =  (req: express.Request, res: express.Response) => {
         (async () => {
-            //
+            try {
+                
+                // The request userId property is set by the authMiddleware
+                // if it is undefined it means that we forgot the authMiddleware
+                if ((req as AuthenticatedRequest).userId === undefined) {
+                    throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
+                }
+
+                // Read and validate the link from the request body
+                const newLink = req.body;
+                const result = joi.validate(newLink, linkSchema);
+
+                if (result.error) {
+                    res.json({ msg: `Invalid user details in body!`}).status(400).send();
+                } else {
+
+                    // Create new link
+                    const linkToBeSaved = new Link();
+                    linkToBeSaved.userId = (req as AuthenticatedRequest).userId;
+                    linkToBeSaved.url = newLink.url;
+                    linkToBeSaved.title = newLink.title;
+                    const savedLink = await linkRepository.save(linkToBeSaved);
+                    res.json(savedLink).send();
+                }
+
+            } catch (err) {
+                // Handle unexpected errors
+                console.error(err);
+                res.status(500)
+                   .json({ error: "Internal server error"})
+                   .send();
+            }
         })();
     }
 
@@ -106,11 +137,24 @@ export function getHandlers(linkRepository: Repository<Link>) {
 
     const upvoteLink =  (req: express.Request, res: express.Response) => {
         (async () => {
-            
-            // The request userId property is set by the authMiddleware
-            // if it is undefined it means that we forgot the authMiddleware
-            if ((req as AuthenticatedRequest).userId === undefined) {
-                throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
+
+            try {
+
+                // The request userId property is set by the authMiddleware
+                // if it is undefined it means that we forgot the authMiddleware
+                if ((req as AuthenticatedRequest).userId === undefined) {
+                    throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
+                }
+
+                // TODO
+
+                
+            } catch (err) {
+                // Handle unexpected errors
+                console.error(err);
+                res.status(500)
+                   .json({ error: "Internal server error"})
+                   .send();
             }
 
         })();
@@ -119,10 +163,23 @@ export function getHandlers(linkRepository: Repository<Link>) {
     const downvoteLink =  (req: express.Request, res: express.Response) => {
         (async () => {
 
-            // The request userId property is set by the authMiddleware
-            // if it is undefined it means that we forgot the authMiddleware
-            if ((req as AuthenticatedRequest).userId === undefined) {
-                throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
+            try {
+
+                // The request userId property is set by the authMiddleware
+                // if it is undefined it means that we forgot the authMiddleware
+                if ((req as AuthenticatedRequest).userId === undefined) {
+                    throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
+                }
+
+                // TODO
+
+                
+            } catch (err) {
+                // Handle unexpected errors
+                console.error(err);
+                res.status(500)
+                   .json({ error: "Internal server error"})
+                   .send();
             }
 
         })();

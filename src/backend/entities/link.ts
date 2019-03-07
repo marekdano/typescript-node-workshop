@@ -4,7 +4,12 @@ import { Vote } from "./vote";
 import { User } from "./user";
 import * as joi from "joi";
 
-const linkSchema = {
+export const linkIdSchema = {
+    title: joi.string,
+    url: joi.string
+};
+
+export const linkSchema = {
     title: joi.string,
     url: joi.string
 };
