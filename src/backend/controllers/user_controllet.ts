@@ -51,8 +51,15 @@ export function getHandlers(userRepository: Repository<User>) {
                     .json({ msg: `Invalid parameter id '${userId.id}' in URL` })
                     .send();
                 } else {
-                    // Try to find the user by the given ID
-                    const user = await userRepository.findOne(userId);
+
+                    // Try to find the user and its activity by the given ID
+                    const user = await userRepository.createQueryBuilder("user")
+                                                     .leftJoinAndSelect("user.comments", "comment")
+                                                     .leftJoinAndSelect("user.links", "link")
+                                                     .leftJoinAndSelect("user.votes", "vote")
+                                                     .where("user.id = :id", { id: userId })
+                                                     .getOne();
+
                     // Return error HTTP 404 not found if not found
                     if (user === undefined) {
                         res.status(404)
