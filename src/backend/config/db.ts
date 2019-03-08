@@ -30,7 +30,7 @@ export async function createDbConnection() {
     }
 
     // Open a database connection
-    await createConnection({
+    return await createConnection({
         type: "postgres",
         host: DATABASE_HOST,
         port: 5432,

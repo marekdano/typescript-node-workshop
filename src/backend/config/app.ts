@@ -5,11 +5,14 @@ import { getAuthController } from "../controllers/auth_controller";
 import { getUserController } from "../controllers/user_controllet";
 import { getLinksController } from "../controllers/links_controller";
 import { getCommentsController } from "../controllers/comments_controller";
+import { Connection } from "typeorm";
 
-export async function createApp() {
+export async function createApp(conn?: Connection) {
 
-    // Create db connection
-    await createDbConnection();
+    // Create db connection if a connection is not passed
+    if (conn === undefined) {
+        conn = await createDbConnection();
+    }
 
     // Creates app
     const app = express();

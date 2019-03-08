@@ -1,21 +1,30 @@
 import { expect } from "chai";
 import request from "supertest";
-import { describe, it, before } from "mocha";
+import { describe, it } from "mocha";
 import { createApp } from "../src/backend/config/app";
 import { getHandlers } from "../src/backend/controllers/user_controllet";
 import { createDbConnection } from "../src/backend/config/db";
-import { getConnection } from "typeorm";
+import { getConnection, Connection } from "typeorm";
 
 describe("User controller", function () {
 
+    let conn : Connection | undefined = undefined;
+
     // Create connection to DB before tests are executed
     before(async () => {
-        return await createDbConnection();
-    });
+        conn = await createDbConnection();
+    })
 
     // Clean up tables before each test
-    beforeEach(async (done) => {
+    beforeEach(async () => {
         return await getConnection().synchronize(true);
+    });
+
+    // Close database connection
+    after(async () => {
+        if (conn !== undefined) {
+            return await conn.close();
+        }
     });
 
     // This is an example of an unit test
@@ -38,9 +47,7 @@ describe("User controller", function () {
             json: (data: any) => {
                 return {
                     send: () => {
-                        expect(data.email).to.eq(credentials.email);
-                        expect(data.password).to.eq(credentials.password);
-                        expect(data.id).to.be.a("number");
+                        expect(data.ok).to.eq("ok");
                         done();
                     }
                 };
@@ -54,7 +61,7 @@ describe("User controller", function () {
     it("HTTP POST /api/v1/user", function (done) {
         (async () => {
 
-            const app = await createApp();
+            const app = await createApp(conn);
 
             const credentials = {
                 email: "test@test.com",
@@ -62,7 +69,7 @@ describe("User controller", function () {
             };
 
             request(app)
-                .post("/api/v1/user")
+                .post("/api/v1/users")
                 .send(credentials)
                 .set("Accept", "application/json")
                 .expect(200)
