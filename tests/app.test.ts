@@ -4,17 +4,28 @@ import { describe, it, before, after } from "mocha";
 import { createApp } from "../src/backend/config/app";
 import { getHandlers } from "../src/backend/controllers/user_controllet";
 import { getUserRepository } from "../src/backend/repositories/user_repository";
+import { createDbConnection } from "../src/backend/config/db";
 
 describe("User controller", function () {
 
+    // Create connection to DB before any tests are executed
     before((done) => {
         (async () => {
-            const userRepository = getUserRepository();
-            await userRepository.clear();
+            await createDbConnection();
+            done();
         })();
     });
 
-    // This is an example of an unit tests
+    // Clean up tables before each unit test
+    beforeEach((done) => {
+        (async () => {
+            const userRepository = getUserRepository();
+            await userRepository.clear();
+            done();
+        })();
+    });
+
+    // This is an example of an unit test
     it("Should be able to create an user", function (done) {
         const credentials = {
             email: "test@test.com",
@@ -47,15 +58,23 @@ describe("User controller", function () {
     });
 
     // This is an example of an integration tests
-    it("HTTP POST /api/v1/users", function (done) {
+    it("HTTP POST /api/v1/user", function (done) {
         (async () => {
+
             const app = await createApp();
+
+            const credentials = {
+                email: "test@test.com",
+                password: "mysecret"
+            };
+
             request(app)
-                .get("/api/v1/users")
+                .post("/api/v1/user")
+                .send(credentials)
+                .set("Accept", "application/json")
                 .expect(200)
                 .expect(function(res) {
-                    expect(res.body[0].title).to.eq("Alien");
-                    expect(res.body[1].title).to.eq("Titanic");
+                    expect(res.body.ok).to.eq("ok");
                 })
                 .end(function(err, res) {
                     if (err) throw err;
