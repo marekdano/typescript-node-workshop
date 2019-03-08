@@ -1,5 +1,3 @@
-// JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaWF0IjoxNTUxOTk1OTMyfQ.R7QYYFVk1hu9t6DQFNhZlUNTat6gIFn1AVl901C-mOQ
-
 /****************************************************************
 *  AUTH SERVICES
 ****************************************************************/
