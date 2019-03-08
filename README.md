@@ -1,6 +1,6 @@
 # typescript-node-workshop
 
-A Node.js workshop with TypeScript for the Dublin TypeScript Meetup
+A Node.js workshop with TypeScript for the [Dublin TypeScript Meetup](https://twitter.com/DubTypeScript)
 
 ## Pre-requisites
 
