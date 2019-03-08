@@ -1,28 +1,21 @@
 import { expect } from "chai";
 import request from "supertest";
-import { describe, it, before, after } from "mocha";
+import { describe, it, before } from "mocha";
 import { createApp } from "../src/backend/config/app";
 import { getHandlers } from "../src/backend/controllers/user_controllet";
-import { getUserRepository } from "../src/backend/repositories/user_repository";
 import { createDbConnection } from "../src/backend/config/db";
+import { getConnection } from "typeorm";
 
 describe("User controller", function () {
 
-    // Create connection to DB before any tests are executed
-    before((done) => {
-        (async () => {
-            await createDbConnection();
-            done();
-        })();
+    // Create connection to DB before tests are executed
+    before(async () => {
+        return await createDbConnection();
     });
 
-    // Clean up tables before each unit test
-    beforeEach((done) => {
-        (async () => {
-            const userRepository = getUserRepository();
-            await userRepository.clear();
-            done();
-        })();
+    // Clean up tables before each test
+    beforeEach(async (done) => {
+        return await getConnection().synchronize(true);
     });
 
     // This is an example of an unit test
