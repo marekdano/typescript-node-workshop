@@ -348,6 +348,48 @@ nodemon
 
 The `nodemon` process uses the `nodemon.json` file. This configuration monitors changes in the `src` folder and executes the `ts-node ./src/demo.ts` command every time there is a change. By doing this, you will not need to worry about manually killing the server and starting it again everytime you change a file.
 
+## Setting environment variables
+
+### In Linux and Mac
+
+In Mac and Linux we can use the following commands in Bash to create environment variables:
+
+```bash
+export DATABASE_USER=postgres
+export DATABASE_PASSWORD=secret
+export DATABASE_HOST=localhost
+export DATABASE_PORT=5432
+export DATABASE_DB=demo
+```
+
+### In windows
+
+In Windows, we need to open the Windows Command Prompt (AKA cmd.exe) as an administrator. We can do this by using the right click over the Windows Command Prompt icon and selecting “Open as administrator”.
+
+We can then execute the following commands:
+
+```bash
+setx DATABASE_USER "postgres"
+setx DATABASE_PASSWORD "secret"
+setx DATABASE_HOST "localhost"
+setx DATABASE_PORT "5432"
+setx DATABASE_DB "demo"
+```
+
+## Checking the environment variables
+
+We can then test that everything went right by opening a new Bash. If you have already a Bash open. Please make sure that you close it and open it again because it needs to be restarted before it becomes aware of the new environment variables. Once you have the new Bash open, you can use the echo command to display the value of these environment variables:
+
+```bash
+echo $DATABASE_USER
+echo $DATABASE_PASSWORD
+echo $DATABASE_HOST
+echo $DATABASE_PORT
+echo $DATABASE_DB
+```
+
+Each of the preceding commands should display the value corresponding to each of the environment variables.
+
 ## Installing Postgres with Docker
 
 We are going to install the Docker community edition (AKA Docker CE).
@@ -457,48 +499,6 @@ We are going to create the following project directory architecture:
 │   └── app.test.ts
 └── tsconfig.json
 ```
-
-## Setting environment variables
-
-### In Linux and Mac
-
-In Mac and Linux we can use the following commands in Bash to create environment variables:
-
-```bash
-export DATABASE_USER=postgres
-export DATABASE_PASSWORD=secret
-export DATABASE_HOST=localhost
-export DATABASE_PORT=5432
-export DATABASE_DB=demo
-```
-
-### In windows
-
-In Windows, we need to open the Windows Command Prompt (AKA cmd.exe) as an administrator. We can do this by using the right click over the Windows Command Prompt icon and selecting “Open as administrator”.
-
-We can then execute the following commands:
-
-```bash
-setx DATABASE_USER "postgres"
-setx DATABASE_PASSWORD "secret"
-setx DATABASE_HOST "localhost"
-setx DATABASE_PORT "5432"
-setx DATABASE_DB "demo"
-```
-
-## Checking the environment variables
-
-We can then test that everything went right by opening a new Bash. If you have already a Bash open. Please make sure that you close it and open it again because it needs to be restarted before it becomes aware of the new environment variables. Once you have the new Bash open, you can use the echo command to display the value of these environment variables:
-
-```bash
-echo $DATABASE_USER
-echo $DATABASE_PASSWORD
-echo $DATABASE_HOST
-echo $DATABASE_PORT
-echo $DATABASE_DB
-```
-
-Each of the preceding commands should display the value corresponding to each of the environment variables.
 
 ## Creating a database connection
 
@@ -648,7 +648,6 @@ import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne } from "ty
 import { Comment } from "./comment";
 import { Vote } from "./vote";
 import { User } from "./user";
-import * as joi from "joi";
 
 @Entity()
 export class Link {
@@ -684,7 +683,6 @@ export class Link {
 
 ```ts
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "typeorm";
-import * as joi from "joi";
 import { Vote } from "./vote";
 import { Link } from "./link";
 import { Comment } from "./comment";
@@ -781,7 +779,6 @@ export class Comment {
     public user!: User;
 
 }
-
 ```
 
 ## Declaring repositories
@@ -804,11 +801,20 @@ It is recommended to read the following documentation:
 
 ```ts
 import * as express from "express";
-import * as joi from "joi";
 import { Repository } from "typeorm";
-import { User, userDetailsSchema, UserIdSchema } from "../entities/user";
+import { User } from "../entities/user";
 import { getUserRepository } from "../repositories/user_repository";
 import { authMiddleware } from "../config/auth";
+import * as joi from "joi";
+
+export const UserIdSchema = {
+    id: joi.number()
+};
+
+export const userDetailsSchema = {
+    email: joi.string().email(),
+    password: joi.string()
+};
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
@@ -822,6 +828,7 @@ export function getHandlers(userRepository: Repository<User>) {
                 // Read and validate the user from the request body
                 const newUser = req.body;
                 const result = joi.validate(newUser, userDetailsSchema);
+
                 if (result.error) {
                     res.json({ msg: `Invalid user details in body!`}).status(400).send();
                 } else {
@@ -849,13 +856,21 @@ export function getHandlers(userRepository: Repository<User>) {
                 const idStr = req.params.id;
                 const userId = { id: parseInt(idStr) };
                 const result = joi.validate(userId, UserIdSchema);
+
                 if (result.error) {
                     res.status(400)
                     .json({ msg: `Invalid parameter id '${userId.id}' in URL` })
                     .send();
                 } else {
-                    // Try to find the user by the given ID
-                    const user = await userRepository.findOne(userId);
+
+                    // Try to find the user and its activity by the given ID
+                    const user = await userRepository.createQueryBuilder("user")
+                                                     .leftJoinAndSelect("user.comments", "comment")
+                                                     .leftJoinAndSelect("user.links", "link")
+                                                     .leftJoinAndSelect("user.votes", "vote")
+                                                     .where("user.id = :id", { id: userId.id })
+                                                     .getOne();
+
                     // Return error HTTP 404 not found if not found
                     if (user === undefined) {
                         res.status(404)
@@ -931,7 +946,6 @@ export async function createApp() {
 
     return app;
 }
-
 ```
 
 ```ts
@@ -977,8 +991,9 @@ import * as joi from "joi";
 import jwt from "jsonwebtoken";
 import { Repository } from "typeorm";
 import { getUserRepository } from "../repositories/user_repository";
-import { User, userDetailsSchema } from "../entities/user";
+import { User } from "../entities/user";
 import { AuthTokenContent } from "../config/auth";
+import { userDetailsSchema } from "./user_controllet";
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
@@ -991,27 +1006,37 @@ export function getHandlers(AUTH_SECRET: string, userRepository: Repository<User
                 // Read and validate the user details from the request body
                 const userDetails = req.body;
                 const result = joi.validate(userDetails, userDetailsSchema);
+
                 if (result.error) {
                     res.status(400).send();
                 } else {
+
                     // Try to find the user with the given credentials
-                    const match = await userRepository.findOne(userDetails);
+                    const user = await userRepository.findOne({
+                        where: {
+                            email: userDetails.email,
+                            password: userDetails.password
+                        }
+                    });
+
                     // Return error HTTP 404 not found if not found
-                    if (match === undefined) {
+                    if (user === undefined) {
                         res.status(401).send();
                     } else {
+
                         // Create JWT token
                         if (AUTH_SECRET === undefined) {
-                            throw new Error("Missing environment variable DATABASE_HOST");
+                            throw new Error("Missing environment variable AUTH_SECRET");
                         } else {
-                            const tokenContent: AuthTokenContent = { id: match.id };
+                            const tokenContent: AuthTokenContent = { id: user.id };
                             const token = jwt.sign(tokenContent, AUTH_SECRET);
                             res.json({ token: token }).send();
                         }
                     }
                 }
-            // Handle unexpected errors
+
             } catch(err) {
+                // Handle unexpected errors
                 console.error(err);
                 res.status(500)
                    .json({ error: "Internal server error"})
@@ -1038,12 +1063,11 @@ export function getAuthController() {
     const handlers = getHandlers(AUTH_SECRET, repository);
     const router = express.Router();
 
-    // HTTP POST http://localhost:8080/auth/login/
+    // Public
     router.post("/login", handlers.login);
 
     return router;
 }
-
 ```
 
 We then need to create an Express.js middleware to validate the JWT before a private endpoint is executed:
@@ -1066,29 +1090,39 @@ export function authMiddleware(
     res: express.Response,
     next: express.NextFunction
 ) {
+
     // Read token signature from environment variables
     const AUTH_SECRET = process.env.AUTH_SECRET;
+
     // Read token from request headers
     const token = req.headers["x-auth-token"];
+
     // Client error if no token found in request headers
     if (typeof token !== "string") {
         res.status(400).send();
     } else {
+
         // Server error is enironment variable is not set
         if (AUTH_SECRET === undefined) {
-            res.status(500).send();
+            throw new Error("Missing environment variable AUTH_SECRET");
         } else {
             try {
+
                 // Check that the token is valid
                 const obj = jwt.verify(token, AUTH_SECRET) as AuthTokenContent;
+
                 // Add the user ID to the HTTP request object
                 // so we can access it from the NEXT request handler
                 (req as AuthenticatedRequest).userId = obj.id;
+
                 // Invoke NEXT request handler
                 next();
             } catch(err) {
                 // Unauthorized if the token cannot be verified
-                res.status(401).send();
+                console.error(err);
+                res.status(500)
+                   .json({ error: "Internal server error"})
+                   .send();
             }
         }
     }
@@ -1098,41 +1132,35 @@ export function authMiddleware(
 Finally, we can protect an enpoint by applying the Express.js middleware:
 
 ```ts
-export function getCommentsController() {
+export function getUserController() {
 
-    const repository = getCommentRepository();
+    const repository = getUserRepository();
     const handlers = getHandlers(repository);
-    const router = express.Router()
+    const router = express.Router();
+
+    // Public
+    router.post("/", handlers.createUser);
 
     // Private
-    router.patch("/comments/:id", authMiddleware, handlers.updateComment);
-    router.post("/comments", authMiddleware, handlers.createComment);
-    router.delete("/comments/:id", authMiddleware, handlers.deleteCommentById);
+    router.get("/:id", authMiddleware, handlers.getUserById);
 
     return router;
 }
 ```
 
 ```ts
-// Create link
-(async () => {
-    const data = {
-        email: "test@test.com",
-        password: "mysecret"
-    };
+async function getUserById(id: number, jwt: string) {
     const response = await fetch(
-        "/api/v1/links",
+        `/api/v1/users/${id}`,
         {
-            method: "POST",
+            method: "GET",
             headers: {
-                "Content-Type": "application/json",
-                "x-auth-token": "INSERT_JSON_WEB_TOKEN_HERE"
-            },
-            body: JSON.stringify(data)
+                "x-auth-token": jwt
+            }
         }
     );
     const json = await response.json();
-    console.log(json);
-})();
+    return json;
+}
 ```
 

@@ -12,6 +12,7 @@ export async function createDbConnection() {
     const DATABASE_USER = process.env.DATABASE_USER;
     const DATABASE_DB = process.env.DATABASE_DB;
 
+    // Validate that environment variables are correct
     if (DATABASE_HOST === undefined) {
         throw new Error("Missing environment variable DATABASE_HOST");
     }

@@ -24,7 +24,7 @@ export function getHandlers(AUTH_SECRET: string, userRepository: Repository<User
                 } else {
 
                     // Try to find the user with the given credentials
-                    const match = await userRepository.findOne({
+                    const user = await userRepository.findOne({
                         where: {
                             email: userDetails.email,
                             password: userDetails.password
@@ -32,15 +32,15 @@ export function getHandlers(AUTH_SECRET: string, userRepository: Repository<User
                     });
 
                     // Return error HTTP 404 not found if not found
-                    if (match === undefined) {
+                    if (user === undefined) {
                         res.status(401).send();
                     } else {
 
                         // Create JWT token
                         if (AUTH_SECRET === undefined) {
-                            throw new Error("Missing environment variable DATABASE_HOST");
+                            throw new Error("Missing environment variable AUTH_SECRET");
                         } else {
-                            const tokenContent: AuthTokenContent = { id: match.id };
+                            const tokenContent: AuthTokenContent = { id: user.id };
                             const token = jwt.sign(tokenContent, AUTH_SECRET);
                             res.json({ token: token }).send();
                         }

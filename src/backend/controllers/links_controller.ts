@@ -222,7 +222,7 @@ export function getLinksController() {
 
     // Private
     router.post("/", authMiddleware, handlers.createLink);
-    router.delete("/", authMiddleware, handlers.deleteLinkById);
+    router.delete("/:id", authMiddleware, handlers.deleteLinkById);
 
     return router;
 }

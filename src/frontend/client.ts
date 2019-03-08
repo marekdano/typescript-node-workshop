@@ -6,8 +6,8 @@
 
 async function getToken(email: string, password: string) {
     const data = {
-        email: "test@test.com",
-        password: "mysecret"
+        email: email,
+        password: password
     };
     const response = await fetch(
         "/api/v1/auth/login",
@@ -123,14 +123,56 @@ async function downvoteLink(id: string, jwt: string) {
 *  COMMENT SERVICES
 ****************************************************************/
 
-async function deleteCommentById(id: string, jwt: string) {
-
+async function deleteCommentById(id: number, jwt: string) {
+    const response = await fetch(
+        `/api/v1/comments/${id}`,
+        {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": jwt
+            }
+        }
+    );
+    const json = await response.json();
+    return json;
 }
 
-async function updateComment(id: string, content: string, jwt: string) {
-
+async function updateComment(id: number, content: string, jwt: string) {
+    const update = {
+        content: content
+    };
+    const response = await fetch(
+        `/api/v1/comments/${id}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": jwt
+            },
+            body: JSON.stringify(update)
+        }
+    );
+    const json = await response.json();
+    return json;
 }
 
 async function createComment(linkId: number, content: string, jwt: string) {
-
+    const update = {
+        linkId: linkId,
+        content: content
+    };
+    const response = await fetch(
+        "/api/v1/comments",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": jwt
+            },
+            body: JSON.stringify(update)
+        }
+    );
+    const json = await response.json();
+    return json;
 }

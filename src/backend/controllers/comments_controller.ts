@@ -68,6 +68,8 @@ export function getHandlers(commentRepository: Repository<Comment>) {
                         // the author of the comment to be updated
                         const commentOwnerId = comment.userId;
                         const userId = (req as AuthenticatedRequest).userId;
+
+                        // User is not the author
                         if (commentOwnerId !== userId) {
                             res.status(403)
                                .json({ msg: `The current user is not the author of the comment` })
@@ -75,10 +77,15 @@ export function getHandlers(commentRepository: Repository<Comment>) {
                         } else {
 
                             // Update comment content
-                            await commentRepository.update(
+                            const result = await commentRepository.update(
                                 { content: newComment.content },
                                 { id: commentId.id }
                             );
+
+                            const where = { id: commentId.id };
+                            const set = { content: newComment.content };
+                            commentRepository.update(where, set);
+                            
                             res.json({ ok: "ok" }).send();
                         }
 
@@ -118,7 +125,7 @@ export function getHandlers(commentRepository: Repository<Comment>) {
                     commentToBeSaved.userId = (req as AuthenticatedRequest).userId;
                     commentToBeSaved.linkId = newComment.linkId;
                     commentToBeSaved.content = newComment.content;
-                    const savedComment = await commentRepository.save(newComment);
+                    const savedComment = await commentRepository.save(commentToBeSaved);
                     res.json(savedComment).send();
                 }
 
@@ -208,9 +215,9 @@ export function getCommentsController() {
     const router = express.Router()
 
     // Private
-    router.patch("/comments/:id", authMiddleware, handlers.updateComment);
-    router.post("/comments", authMiddleware, handlers.createComment);
-    router.delete("/comments/:id", authMiddleware, handlers.deleteCommentById);
+    router.patch("/:id", authMiddleware, handlers.updateComment);
+    router.post("/", authMiddleware, handlers.createComment);
+    router.delete("/:id", authMiddleware, handlers.deleteCommentById);
 
     return router;
 }
