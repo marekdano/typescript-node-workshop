@@ -77,7 +77,7 @@ export function getHandlers(commentRepository: Repository<Comment>) {
                         } else {
 
                             // Update comment content
-                            const result = await commentRepository.update(
+                            await commentRepository.update(
                                 { content: newComment.content },
                                 { id: commentId.id }
                             );

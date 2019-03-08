@@ -4,6 +4,8 @@ import { getLinkRepository } from "../repositories/link_repository";
 import { Link } from "../entities/link";
 import { authMiddleware, AuthenticatedRequest } from "../config/auth";
 import * as joi from "joi";
+import { getVoteRepository } from "../repositories/vote_repository";
+import { Vote } from "../entities/vote";
 
 export const linkIdSchema = {
     id: joi.number()
@@ -16,7 +18,7 @@ export const linkSchema = {
 
 // We pass the repository instance as an argument
 // We use this pattern so we can unit test the handlers with ease
-export function getHandlers(linkRepository: Repository<Link>) {
+export function getHandlers(linkRepository: Repository<Link>, voteRepository: Repository<Vote>) {
 
     const getAllLinks = (req: express.Request, res: express.Response) => {
         (async () => {
@@ -41,8 +43,6 @@ export function getHandlers(linkRepository: Repository<Link>) {
                 const idStr = req.params.id;
                 const linkId = { id: parseInt(idStr) };
                 const idValidationresult = joi.validate(linkId, linkIdSchema);
-
-                console.log("------------------------------->", idValidationresult);
                 
                 if (idValidationresult.error) {
                     res.status(400).json({ error: "Bad request" }).send();
@@ -118,23 +118,26 @@ export function getHandlers(linkRepository: Repository<Link>) {
                     throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
                 }
 
-                // Read ID from URL parameter
+                // Validate Id in URL
                 const idStr = req.params.id;
-                const id = parseInt(idStr);
-
-                // If ID is not a number return 400 Bad request
-                if (isNaN(id)) {
+                const linkId = { id: parseInt(idStr) };
+                const idValidationresult = joi.validate(linkId, linkIdSchema);
+                
+                if (idValidationresult.error) {
                     res.status(400).json({ error: "Bad request" }).send();
                 } else {
+
                     // Try to find link to be deleted
-                    const link = await linkRepository.findOne(id);
+                    const link = await linkRepository.findOne(linkId.id);
+
                     // If link not found return 404 not found
                     if (link === undefined) {
                         res.status(404)
                            .json({ error: "Not found"})
                            .send();
-                    // If lik was found, remove it from DB
                     } else {
+
+                        // If lik was found, remove it from DB
                         await linkRepository.remove(link);
                         res.json({ msg: "OK" }).send();
                     }
@@ -160,8 +163,44 @@ export function getHandlers(linkRepository: Repository<Link>) {
                     throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
                 }
 
-                // TODO
+                // Validate Id in URL
+                const idStr = req.params.id;
+                const linkId = { id: parseInt(idStr) };
+                const idValidationresult = joi.validate(linkId, linkIdSchema);
+                
+                if (idValidationresult.error) {
+                    res.status(400).json({ error: "Bad request" }).send();
+                } else {
 
+                    // Try to find previous vote by same user
+                    const vote = await voteRepository.findOne({
+                        where: {
+                            linkId: linkId.id,
+                            userId: (req as AuthenticatedRequest).userId
+                        }
+                    });
+
+                    // The user has already voted
+                    if (vote !== undefined && vote.isPositive === false) {
+
+                        // If the vote was negative we remove it
+                        await voteRepository.remove(vote);
+                        res.status(200).json({ ok: "ok" }).send();
+                    } else if (vote !== undefined && vote.isPositive === true) {
+
+                        // if the vote was positive we cannot vote again
+                        res.status(403).json({ error: "Forbidden" }).send();
+                    } else {
+
+                        // If there was no vote we create it
+                        const voteToBeSaved = new Vote();
+                        voteToBeSaved.isPositive = true;
+                        voteToBeSaved.linkId = linkId.id;
+                        voteToBeSaved.userId = (req as AuthenticatedRequest).userId;
+                        await voteRepository.save(voteToBeSaved);
+                        res.status(200).json({ ok: "ok" }).send();
+                    }
+                }
                 
             } catch (err) {
                 // Handle unexpected errors
@@ -185,7 +224,45 @@ export function getHandlers(linkRepository: Repository<Link>) {
                     throw new Error("The request is not authenticated! Please ensure that authMiddleware is used");
                 }
 
-                // TODO
+                // Validate Id in URL
+                const idStr = req.params.id;
+                const linkId = { id: parseInt(idStr) };
+                const idValidationresult = joi.validate(linkId, linkIdSchema);
+                
+                if (idValidationresult.error) {
+                    res.status(400).json({ error: "Bad request" }).send();
+                } else {
+
+                    // Try to find previous vote by same user
+                    const vote = await voteRepository.findOne({
+                        where: {
+                            linkId: linkId.id,
+                            userId: (req as AuthenticatedRequest).userId
+                        }
+                    });
+
+                    // The user has already voted
+                    if (vote !== undefined && vote.isPositive === true) {
+
+                        // If the vote was positive we remove it
+                        await voteRepository.remove(vote);
+                        res.status(200).json({ ok: "ok" }).send();
+                    } else if (vote !== undefined && vote.isPositive === false) {
+
+                        // if the vote was negative we cannot vote again
+                        res.status(403).json({ error: "Forbidden" }).send();
+                    } else {
+
+                        // If there was no vote we create it
+                        const voteToBeSaved = new Vote();
+                        voteToBeSaved.isPositive = false;
+                        voteToBeSaved.linkId = linkId.id;
+                        voteToBeSaved.userId = (req as AuthenticatedRequest).userId;
+                        await voteRepository.save(voteToBeSaved);
+                        res.status(200).json({ ok: "ok" }).send();
+                    }
+
+                }
 
                 
             } catch (err) {
@@ -212,8 +289,9 @@ export function getHandlers(linkRepository: Repository<Link>) {
 
 export function getLinksController() {
 
-    const repository = getLinkRepository();
-    const handlers = getHandlers(repository);
+    const linkRepository = getLinkRepository();
+    const voteRepository = getVoteRepository();
+    const handlers = getHandlers(linkRepository, voteRepository);
     const router = express.Router();
 
     // Public
@@ -223,6 +301,8 @@ export function getLinksController() {
     // Private
     router.post("/", authMiddleware, handlers.createLink);
     router.delete("/:id", authMiddleware, handlers.deleteLinkById);
+    router.post("/:id/upvote", authMiddleware, handlers.upvoteLink);
+    router.post("/:id/downvote", authMiddleware, handlers.downvoteLink);
 
     return router;
 }

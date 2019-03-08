@@ -112,11 +112,33 @@ async function deleteLinkById(id: number, jwt: string) {
 }
 
 async function upvoteLink(id: string, jwt: string) {
-
+    const response = await fetch(
+        `/api/v1/links/${id}/upvote`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": jwt
+            }
+        }
+    );
+    const json = await response.json();
+    return json;
 }
 
 async function downvoteLink(id: string, jwt: string) {
-    
+    const response = await fetch(
+        `/api/v1/links/${id}/downvote`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-auth-token": jwt
+            }
+        }
+    );
+    const json = await response.json();
+    return json;
 }
 
 /****************************************************************
